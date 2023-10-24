@@ -187,5 +187,8 @@ func main() {
 	authToken = config.AuthToken
 
 	http.HandleFunc("/execute", handler)
+	sentry.CaptureMessage("CLI Commander Web API started")
 	log.Fatal(http.ListenAndServe(config.SocketAddr, nil))
+	defer sentry.CaptureMessage("CLI Commander Web API terminated")
+
 }
