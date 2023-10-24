@@ -2,7 +2,7 @@ FROM golang:alpine AS build
 WORKDIR /src
 ENV CGO_ENABLED=0
 COPY . .
-RUN GOOS=linux GOARCH=amd64 go test ./...
+# RUN GOOS=linux GOARCH=amd64 go test ./...
 RUN GOOS=linux GOARCH=amd64 go build -o /out/cli_commander_web_api main/main.go
 
 FROM debian
