@@ -149,7 +149,7 @@ func getEnv(key, defaultValue string) string {
 }
 
 // Parse and override configurations with CLI flags
-func parseFlags(cfg *Config) {
+func parseCliFlags(cfg *Config) {
 	flag.StringVar(&cfg.SocketAddr, "socket", cfg.SocketAddr, "The address and port to listen on")
 	flag.StringVar(&cfg.AuthToken, "auth-token", cfg.AuthToken, "The authorization token required to use the server")
 
@@ -172,23 +172,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
-	// Ensures Sentry-go SDK flushes all the buffered events before the program ends.
 	defer sentry.Flush(2 * time.Second)
 
-	// Load configurations
 	config := loadConfigFromEnv()
 
-	// Override with CLI flags if provided
-	parseFlags(&config)
+	parseCliFlags(&config)
 
-	// Validate configurations
 	validateConfig(config)
+
+	log.Printf("Starting the CLI commander Web API on { %s }", config.SocketAddr)
 
 	authToken = config.AuthToken
 
 	http.HandleFunc("/execute", handler)
 	sentry.CaptureMessage("CLI Commander Web API started")
-	log.Fatal(http.ListenAndServe(config.SocketAddr, nil))
 	defer sentry.CaptureMessage("CLI Commander Web API terminated")
+	log.Fatal(http.ListenAndServe(config.SocketAddr, nil))
 
 }
