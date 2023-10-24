@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var authToken = ""
@@ -40,7 +41,42 @@ func executeCommand(decodedCmd string) ([]byte, error) {
 		return nil, fmt.Errorf("no command provided")
 	}
 
-	return exec.Command("sh", "-c", decodedCmd).CombinedOutput()
+	runInBackground := false
+	if strings.HasSuffix(decodedCmd, "&") {
+		runInBackground = true
+		decodedCmd = strings.TrimSpace(strings.TrimSuffix(decodedCmd, "&"))
+	}
+
+	cmdParts := strings.Fields(decodedCmd)
+	if len(cmdParts) == 0 {
+		return nil, fmt.Errorf("no command provided")
+	}
+
+	cmd := cmdParts[0]
+	args := cmdParts[1:]
+
+	execCmd := exec.Command(cmd, args...)
+
+	if runInBackground {
+		execCmd.Stdout = nil
+		execCmd.Stderr = nil
+
+		err := execCmd.Start()
+		if err != nil {
+			return nil, err
+		}
+
+		// If running in the background, return the PID of the started process
+		return []byte(fmt.Sprintf("Command started with PID: %d", execCmd.Process.Pid)), nil
+	}
+
+	// If not a background command, just run and wait for the command to finish
+	output, err := execCmd.CombinedOutput()
+	if err != nil {
+		return output, fmt.Errorf("Command execution failed: %w", err)
+	}
+
+	return output, nil
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
