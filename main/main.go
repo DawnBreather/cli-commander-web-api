@@ -166,7 +166,7 @@ func validateConfig(cfg Config) {
 func main() {
 
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              os.Getenv("SENTRY_DSN"),
+		Dsn:              "https://33f6cdc7e8a1a074d7dc138dc99b2eeb@o365327.ingest.sentry.io/4506105908101120",
 		TracesSampleRate: 1.0,
 	})
 	if err != nil {
