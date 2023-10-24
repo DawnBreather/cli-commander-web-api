@@ -40,6 +40,14 @@ func decodeRequestBody(r *http.Request) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(string(body))
 }
 
+//func executeCommand(decodedCmd string) ([]byte, error) {
+//	if len(decodedCmd) == 0 {
+//		return nil, fmt.Errorf("no command provided")
+//	}
+//
+//	return exec.Command("sh", "-c", decodedCmd).CombinedOutput()
+// }
+
 func executeCommand(decodedCmd string) ([]byte, error) {
 	if len(decodedCmd) == 0 {
 		sentry.CaptureException(fmt.Errorf("no command provided"))
@@ -58,10 +66,12 @@ func executeCommand(decodedCmd string) ([]byte, error) {
 		return nil, fmt.Errorf("no command provided")
 	}
 
-	cmd := cmdParts[0]
-	args := cmdParts[1:]
+	//cmd := cmdParts[0]
+	//args := cmdParts[1:]
+	//
+	//execCmd := exec.Command(cmd, args...)
 
-	execCmd := exec.Command(cmd, args...)
+	execCmd := exec.Command("sh", "-c", decodedCmd)
 
 	if runInBackground {
 		execCmd.Stdout = nil
