@@ -11,6 +11,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
+
+	sentry "github.com/getsentry/sentry-go"
 )
 
 var authToken = ""
@@ -29,6 +32,7 @@ func isValidAuthorization(r *http.Request) bool {
 func decodeRequestBody(r *http.Request) ([]byte, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		sentry.CaptureException(fmt.Errorf("failed reading request body: %w", err))
 		return nil, fmt.Errorf("failed reading request body: %w", err)
 	}
 	defer r.Body.Close()
@@ -38,6 +42,7 @@ func decodeRequestBody(r *http.Request) ([]byte, error) {
 
 func executeCommand(decodedCmd string) ([]byte, error) {
 	if len(decodedCmd) == 0 {
+		sentry.CaptureException(fmt.Errorf("no command provided"))
 		return nil, fmt.Errorf("no command provided")
 	}
 
@@ -49,6 +54,7 @@ func executeCommand(decodedCmd string) ([]byte, error) {
 
 	cmdParts := strings.Fields(decodedCmd)
 	if len(cmdParts) == 0 {
+		sentry.CaptureException(fmt.Errorf("no command provided"))
 		return nil, fmt.Errorf("no command provided")
 	}
 
@@ -73,6 +79,7 @@ func executeCommand(decodedCmd string) ([]byte, error) {
 	// If not a background command, just run and wait for the command to finish
 	output, err := execCmd.CombinedOutput()
 	if err != nil {
+		sentry.CaptureException(fmt.Errorf("Command execution failed: %w", err))
 		return output, fmt.Errorf("Command execution failed: %w", err)
 	}
 
@@ -81,23 +88,27 @@ func executeCommand(decodedCmd string) ([]byte, error) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	if !isRequestFromLocalhost(r.RemoteAddr) {
+		sentry.CaptureException(fmt.Errorf("HTTP handler: {Access denied} replied"))
 		http.Error(w, "Access denied", http.StatusForbidden)
 		return
 	}
 
 	if !isValidAuthorization(r) {
+		sentry.CaptureException(fmt.Errorf("HTTP handler: {Invalid or missing authorization token} replied"))
 		http.Error(w, "Invalid or missing authorization token", http.StatusUnauthorized)
 		return
 	}
 
 	decodedBytes, err := decodeRequestBody(r)
 	if err != nil {
+		sentry.CaptureException(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	output, err := executeCommand(string(decodedBytes))
 	if err != nil {
+		sentry.CaptureException(fmt.Errorf("Command execution failed: %v\n%s", err, output))
 		http.Error(w, fmt.Sprintf("Command execution failed: %v\n%s", err, output), http.StatusInternalServerError)
 		return
 	}
@@ -143,6 +154,17 @@ func validateConfig(cfg Config) {
 }
 
 func main() {
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn:              os.Getenv("SENTRY_DSN"),
+		TracesSampleRate: 1.0,
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+	// Ensures Sentry-go SDK flushes all the buffered events before the program ends.
+	defer sentry.Flush(2 * time.Second)
+
 	// Load configurations
 	config := loadConfigFromEnv()
 
