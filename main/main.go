@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 var authToken = ""
@@ -37,14 +36,11 @@ func decodeRequestBody(r *http.Request) ([]byte, error) {
 }
 
 func executeCommand(decodedCmd string) ([]byte, error) {
-	cmdParts := strings.Fields(decodedCmd)
-	if len(cmdParts) == 0 {
+	if len(decodedCmd) == 0 {
 		return nil, fmt.Errorf("no command provided")
 	}
 
-	cmd := cmdParts[0]
-	args := cmdParts[1:]
-	return exec.Command(cmd, args...).CombinedOutput()
+	return exec.Command("sh", "-c", decodedCmd).CombinedOutput()
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
