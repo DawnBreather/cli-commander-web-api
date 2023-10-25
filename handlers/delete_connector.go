@@ -38,7 +38,7 @@ func DeleteConnectorHandler(w http.ResponseWriter, r *http.Request) {
 
 	var combinedOutput []byte
 	for _, cmd := range commands {
-		combinedOutput = append(combinedOutput, fmt.Sprintf("Executing: { %s }", cmd)...)
+		combinedOutput = append(combinedOutput, fmt.Sprintf("Executing: { %s }\n", cmd)...)
 		output, err := ExecuteCommand(cmd)
 		if err != nil {
 			combinedOutput = append(combinedOutput, fmt.Sprintf("Failed executing command: %s\nError: %s\nOutput: %s\n\n", cmd, err, output)...)
