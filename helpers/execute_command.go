@@ -48,7 +48,7 @@ func ExecuteCommand(decodedCmd string) ([]byte, error) {
 	// If not a background command, just run and wait for the command to finish
 	output, err := execCmd.CombinedOutput()
 	if err != nil {
-		sentry.CaptureException(fmt.Errorf("Command execution failed: %w", err))
+		sentry.CaptureException(fmt.Errorf("Command execution failed: %v", err))
 		return output, fmt.Errorf("Command execution failed: %w", err)
 	}
 
