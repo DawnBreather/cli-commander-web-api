@@ -30,7 +30,7 @@ func DeleteConnectorHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Execute the commands
 	commands := []string{
-		fmt.Sprintf("pkill -f \"kubectl --namespace %s port-forward service/%s\" || true", request.NamespaceName, request.ConnectorName),
+		fmt.Sprintf("pkill -f \"^kubectl --namespace %s port-forward service/%s\" || true", request.NamespaceName, request.ConnectorName),
 		fmt.Sprintf("kubectl delete deployments %s --ignore-not-found=true --namespace %s", request.ConnectorName, request.NamespaceName),
 		fmt.Sprintf("kubectl delete services %s --ignore-not-found=true --namespace %s", request.ConnectorName, request.NamespaceName),
 		fmt.Sprintf("sleep %ds", request.DelayInSeconds),
